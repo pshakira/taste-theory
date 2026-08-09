@@ -42,6 +42,7 @@ dependencies {
 	testImplementation("org.springframework.boot:spring-boot-testcontainers")
 	testImplementation("org.testcontainers:testcontainers-junit-jupiter")
 	testImplementation("org.testcontainers:testcontainers-postgresql")
+	testImplementation("org.assertj:assertj-core")
 
 	// Enforces the layering rules as an ordinary test.
 	testImplementation("com.tngtech.archunit:archunit-junit5:$archunitVersion")

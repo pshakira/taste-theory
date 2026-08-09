@@ -1,3 +1,33 @@
 spring:
   application:
     name: taste-theory
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taste_theory
+    username: taste
+    password: taste
+
+  jpa:
+    hibernate:
+      # Flyway owns the schema. Hibernate only checks the entities match it and
+      # never alters a table itself.
+      ddl-auto: validate
+    # Keeps database sessions inside the service layer instead of staying open
+    # through response rendering.
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only these are reachable over HTTP. Everything else stays closed.
+        include: health,info
+  endpoint:
+    health:
+      # Local convenience: shows which individual checks passed. Worth
+      # restricting before this is exposed publicly.
+      show-details: always

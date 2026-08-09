@@ -21,37 +21,37 @@ class UnitOfMeasureTest {
 	class WithinADimension {
 
 		@Test
-		void a_kilogram_is_a_thousand_grams() {
+		void aKilogramIsAThousandGrams() {
 			assertThat(UnitOfMeasure.KILOGRAM.conversionFactorTo(UnitOfMeasure.GRAM))
 					.isEqualByComparingTo("1000");
 		}
 
 		@Test
-		void and_a_gram_is_a_thousandth_of_a_kilogram() {
+		void andAGramIsAThousandthOfAKilogram() {
 			assertThat(UnitOfMeasure.GRAM.conversionFactorTo(UnitOfMeasure.KILOGRAM))
 					.isEqualByComparingTo("0.001");
 		}
 
 		@Test
-		void a_litre_is_a_thousand_millilitres() {
+		void aLitreIsAThousandMillilitres() {
 			assertThat(UnitOfMeasure.LITRE.conversionFactorTo(UnitOfMeasure.MILLILITRE))
 					.isEqualByComparingTo("1000");
 		}
 
 		@Test
-		void a_dozen_is_twelve() {
+		void aDozenIsTwelve() {
 			assertThat(UnitOfMeasure.DOZEN.conversionFactorTo(UnitOfMeasure.EACH))
 					.isEqualByComparingTo("12");
 		}
 
 		@Test
-		void a_unit_converts_to_itself_exactly() {
+		void aUnitConvertsToItselfExactly() {
 			assertThat(UnitOfMeasure.GRAM.conversionFactorTo(UnitOfMeasure.GRAM))
 					.isEqualByComparingTo("1");
 		}
 
 		@Test
-		void a_factor_that_does_not_terminate_still_produces_an_answer() {
+		void aFactorThatDoesNotTerminateStillProducesAnAnswer() {
 			// 1/12 recurs, so an exact BigDecimal division would throw. It has to
 			// come back rounded, and close enough to round-trip.
 			BigDecimal eachToDozen = UnitOfMeasure.EACH.conversionFactorTo(UnitOfMeasure.DOZEN);
@@ -66,7 +66,7 @@ class UnitOfMeasureTest {
 	class AcrossDimensions {
 
 		@Test
-		void weight_does_not_become_volume() {
+		void weightDoesNotBecomeVolume() {
 			assertThatExceptionOfType(IncompatibleUnitsException.class)
 					.isThrownBy(() -> UnitOfMeasure.KILOGRAM.conversionFactorTo(UnitOfMeasure.MILLILITRE))
 					.withMessageContaining("kg")
@@ -74,13 +74,13 @@ class UnitOfMeasureTest {
 		}
 
 		@Test
-		void volume_does_not_become_weight() {
+		void volumeDoesNotBecomeWeight() {
 			assertThatExceptionOfType(IncompatibleUnitsException.class)
 					.isThrownBy(() -> UnitOfMeasure.LITRE.conversionFactorTo(UnitOfMeasure.GRAM));
 		}
 
 		@Test
-		void a_count_does_not_become_a_weight_on_its_own() {
+		void aCountDoesNotBecomeAWeightOnItsOwn() {
 			// Allowed eventually, but only with a figure the user supplies: "each
 			// tin holds 400 g". That belongs on the item, not on the unit.
 			assertThatExceptionOfType(IncompatibleUnitsException.class)
@@ -88,7 +88,7 @@ class UnitOfMeasureTest {
 		}
 
 		@Test
-		void the_exception_carries_both_units() {
+		void theExceptionCarriesBothUnits() {
 			IncompatibleUnitsException thrown = null;
 			try {
 				UnitOfMeasure.KILOGRAM.conversionFactorTo(UnitOfMeasure.LITRE);
@@ -108,17 +108,17 @@ class UnitOfMeasureTest {
 	class Parsing {
 
 		@Test
-		void reads_the_short_form() {
+		void readsTheShortForm() {
 			assertThat(UnitOfMeasure.fromCode("kg")).isEqualTo(UnitOfMeasure.KILOGRAM);
 		}
 
 		@Test
-		void ignores_case_and_surrounding_space() {
+		void ignoresCaseAndSurroundingSpace() {
 			assertThat(UnitOfMeasure.fromCode("  ML ")).isEqualTo(UnitOfMeasure.MILLILITRE);
 		}
 
 		@Test
-		void names_the_alternatives_when_it_does_not_recognise_one() {
+		void namesTheAlternativesWhenItDoesNotRecogniseOne() {
 			assertThatIllegalArgumentException()
 					.isThrownBy(() -> UnitOfMeasure.fromCode("cups"))
 					.withMessageContaining("cups")
@@ -127,7 +127,7 @@ class UnitOfMeasureTest {
 
 		@ParameterizedTest
 		@EnumSource(UnitOfMeasure.class)
-		void every_unit_can_be_parsed_back_from_its_own_code(UnitOfMeasure unit) {
+		void everyUnitCanBeParsedBackFromItsOwnCode(UnitOfMeasure unit) {
 			assertThat(UnitOfMeasure.fromCode(unit.code())).isEqualTo(unit);
 		}
 	}
@@ -137,7 +137,7 @@ class UnitOfMeasureTest {
 	class TheSet {
 
 		@Test
-		void every_code_is_unique() {
+		void everyCodeIsUnique() {
 			long distinctCodes = Arrays.stream(UnitOfMeasure.values())
 					.map(UnitOfMeasure::code)
 					.distinct()
@@ -147,7 +147,7 @@ class UnitOfMeasureTest {
 		}
 
 		@Test
-		void every_dimension_has_exactly_one_base_unit() {
+		void everyDimensionHasExactlyOneBaseUnit() {
 			var baseUnitsPerDimension = Arrays.stream(UnitOfMeasure.values())
 					.filter(UnitOfMeasure::isBaseUnit)
 					.collect(Collectors.groupingBy(UnitOfMeasure::dimension, Collectors.counting()));
@@ -159,7 +159,7 @@ class UnitOfMeasureTest {
 
 		@ParameterizedTest
 		@EnumSource(UnitOfMeasure.class)
-		void no_unit_is_smaller_than_its_base(UnitOfMeasure unit) {
+		void noUnitIsSmallerThanItsBase(UnitOfMeasure unit) {
 			assertThat(unit.factorToBaseUnit()).isGreaterThanOrEqualTo(BigDecimal.ONE);
 		}
 	}

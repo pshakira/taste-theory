@@ -20,17 +20,17 @@ class MoneyTest {
 	class Equality {
 
 		@Test
-		void ignores_how_many_zeros_were_typed() {
+		void ignoresHowManyZerosWereTyped() {
 			assertThat(Money.euros("0.10")).isEqualTo(Money.euros("0.1000"));
 		}
 
 		@Test
-		void equal_amounts_share_a_hash_code() {
+		void equalAmountsShareAHashCode() {
 			assertThat(Money.euros("0.10")).hasSameHashCodeAs(Money.euros("0.1000"));
 		}
 
 		@Test
-		void the_same_number_in_two_currencies_is_not_the_same_money() {
+		void theSameNumberInTwoCurrenciesIsNotTheSameMoney() {
 			assertThat(Money.euros("5.00")).isNotEqualTo(Money.of(new BigDecimal("5.00"), USD));
 		}
 	}
@@ -40,7 +40,7 @@ class MoneyTest {
 	class Precision {
 
 		@Test
-		void a_price_far_below_a_cent_survives() {
+		void aPriceFarBelowACentSurvives() {
 			// A EUR 4.50 sack holding 5000 g. At two decimal places this is zero,
 			// and every recipe cost built on it would be zero too.
 			Money perGram = Money.euros("4.50").dividedBy(new BigDecimal("5000"));
@@ -50,14 +50,14 @@ class MoneyTest {
 		}
 
 		@Test
-		void small_amounts_still_accumulate() {
+		void smallAmountsStillAccumulate() {
 			Money perGram = Money.euros("0.0009");
 
 			assertThat(perGram.times(new BigDecimal("5"))).isEqualTo(Money.euros("0.0045"));
 		}
 
 		@Test
-		void division_that_does_not_come_out_evenly_is_rounded_half_up() {
+		void divisionThatDoesNotComeOutEvenlyIsRoundedHalfUp() {
 			// EUR 8.90 across 12 units — the case that stops line totals being
 			// recomputed from unit prices later on.
 			assertThat(Money.euros("8.90").dividedBy(new BigDecimal("12")))
@@ -65,7 +65,7 @@ class MoneyTest {
 		}
 
 		@Test
-		void anything_beyond_six_places_is_rounded_away_on_construction() {
+		void anythingBeyondSixPlacesIsRoundedAwayOnConstruction() {
 			assertThat(Money.euros("0.0000005")).isEqualTo(Money.euros("0.000001"));
 		}
 	}
@@ -80,7 +80,7 @@ class MoneyTest {
 		}
 
 		@Test
-		void subtracts_past_zero_when_asked() {
+		void subtractsPastZeroWhenAsked() {
 			assertThat(Money.euros("1.00").minus(Money.euros("1.50"))).isEqualTo(Money.euros("-0.50"));
 		}
 
@@ -90,7 +90,7 @@ class MoneyTest {
 		}
 
 		@Test
-		void refuses_to_add_different_currencies() {
+		void refusesToAddDifferentCurrencies() {
 			Money euros = Money.euros("5.00");
 			Money dollars = Money.of(new BigDecimal("5.00"), USD);
 
@@ -101,7 +101,7 @@ class MoneyTest {
 		}
 
 		@Test
-		void refuses_to_compare_different_currencies() {
+		void refusesToCompareDifferentCurrencies() {
 			Money euros = Money.euros("5.00");
 			Money dollars = Money.of(new BigDecimal("5.00"), USD);
 
@@ -109,7 +109,7 @@ class MoneyTest {
 		}
 
 		@Test
-		void refuses_to_divide_by_zero() {
+		void refusesToDivideByZero() {
 			assertThatExceptionOfType(ArithmeticException.class)
 					.isThrownBy(() -> Money.euros("5.00").dividedBy(BigDecimal.ZERO));
 		}
@@ -120,17 +120,17 @@ class MoneyTest {
 	class RoundingForPayment {
 
 		@Test
-		void rounds_to_cents() {
+		void roundsToCents() {
 			assertThat(Money.euros("0.741667").roundedToMinorUnit()).isEqualTo(Money.euros("0.74"));
 		}
 
 		@Test
-		void rounds_half_up() {
+		void roundsHalfUp() {
 			assertThat(Money.euros("8.905").roundedToMinorUnit()).isEqualTo(Money.euros("8.91"));
 		}
 
 		@Test
-		void leaves_an_amount_that_is_already_exact_alone() {
+		void leavesAnAmountThatIsAlreadyExactAlone() {
 			assertThat(Money.euros("8.90").roundedToMinorUnit()).isEqualTo(Money.euros("8.90"));
 		}
 	}
@@ -140,18 +140,18 @@ class MoneyTest {
 	class Guards {
 
 		@Test
-		void rejects_a_null_amount() {
+		void rejectsANullAmount() {
 			assertThatNullPointerException().isThrownBy(() -> Money.euros((BigDecimal) null));
 		}
 
 		@Test
-		void rejects_a_null_currency() {
+		void rejectsANullCurrency() {
 			assertThatNullPointerException().isThrownBy(() -> Money.of(BigDecimal.ONE, null));
 		}
 	}
 
 	@Test
-	void reads_sensibly_when_printed() {
+	void readsSensiblyWhenPrinted() {
 		assertThat(Money.euros("4.50")).hasToString("EUR 4.500000");
 	}
 }

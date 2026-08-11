@@ -8,10 +8,14 @@ import static com.tastetheory.shared.domain.UnitOfMeasure.MILLILITRE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
+import com.tastetheory.shared.domain.Allergen;
+import com.tastetheory.shared.domain.AllergenProfile;
 import com.tastetheory.shared.domain.Money;
+import com.tastetheory.shared.domain.Nutrition;
 import com.tastetheory.shared.domain.Percentage;
 import com.tastetheory.shared.domain.Quantity;
 import com.tastetheory.shared.domain.UnitPrice;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -162,6 +166,85 @@ class ItemTest {
 	}
 
 	@Nested
+	@DisplayName("nutrition")
+	class NutritionOfAnItem {
+
+		/** A supplier's figures for onions, per 100 g. */
+		private static Item onionsWithNutrition() {
+			Item item = onions();
+			item.recordNutritionPer100(Nutrition.of("40", "1.1", "9.3", "0.1", "1.7", "0.004"));
+			return item;
+		}
+
+		@Test
+		void nothingIsDeclaredToBeginWith() {
+			assertThat(onions().nutritionPer100RecipeUnits().isZero()).isTrue();
+		}
+
+		@Test
+		void scalesFromTheHundredUnitBasis() {
+			assertThat(onionsWithNutrition().nutritionFor(Quantity.of("200", GRAM)))
+					.isEqualTo(Nutrition.of("80", "2.2", "18.6", "0.2", "3.4", "0.008"));
+		}
+
+		@Test
+		void convertsTheQuantityIntoRecipeUnitsFirst() {
+			assertThat(onionsWithNutrition().nutritionFor(Quantity.of("0.2", KILOGRAM)))
+					.isEqualTo(onionsWithNutrition().nutritionFor(Quantity.of("200", GRAM)));
+		}
+
+		@Test
+		void yieldDoesNotTouchIt() {
+			// The whole point: trim loss raises what a gram costs, but the figures
+			// already describe the edible portion, so they must not move.
+			Item item = onionsWithNutrition();
+			Nutrition before = item.nutritionFor(Quantity.of("200", GRAM));
+			UnitPrice costBefore = item.costPerRecipeUnit();
+
+			item.changeYield(YieldPercentage.ofPercent(50));
+
+			assertThat(item.costPerRecipeUnit()).isGreaterThan(costBefore);
+			assertThat(item.nutritionFor(Quantity.of("200", GRAM))).isEqualTo(before);
+		}
+
+		@Test
+		void worksThroughTheCountBridge() {
+			Item tomatoes = tinnedTomatoes();
+			tomatoes.recordNutritionPer100(Nutrition.of("20", "1.2", "3.4", "0.2", "1.0", "0.01"));
+
+			// One 400 g tin is four times the 100 g basis.
+			assertThat(tomatoes.nutritionFor(Quantity.of("400", GRAM)))
+					.isEqualTo(Nutrition.of("80", "4.8", "13.6", "0.8", "4.0", "0.04"));
+		}
+	}
+
+	@Nested
+	@DisplayName("allergens")
+	class AllergensOfAnItem {
+
+		@Test
+		void nothingIsDeclaredToBeginWith() {
+			assertThat(onions().allergens().declaresNothing()).isTrue();
+		}
+
+		@Test
+		void whatIsDeclaredIsKept() {
+			Item flour = Item.create(
+					"Wheat flour",
+					ItemUnits.of(KILOGRAM, GRAM),
+					AgreedPrice.perUnit(Money.euros("0.90"), KILOGRAM),
+					YieldPercentage.full());
+
+			flour.declareAllergens(AllergenProfile.of(
+					List.of(Allergen.CEREALS_CONTAINING_GLUTEN),
+					List.of(Allergen.SESAME)));
+
+			assertThat(flour.allergens().contains(Allergen.CEREALS_CONTAINING_GLUTEN)).isTrue();
+			assertThat(flour.allergens().mayContain(Allergen.SESAME)).isTrue();
+		}
+	}
+
+	@Nested
 	@DisplayName("invariants")
 	class Invariants {
 
@@ -263,6 +346,8 @@ class ItemTest {
 					item.units(),
 					item.agreedPrice(),
 					item.yieldPercentage(),
+					null,
+					null,
 					null,
 					null);
 

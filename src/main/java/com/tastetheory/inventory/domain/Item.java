@@ -1,9 +1,12 @@
 package com.tastetheory.inventory.domain;
 
+import com.tastetheory.shared.domain.AllergenProfile;
 import com.tastetheory.shared.domain.Money;
+import com.tastetheory.shared.domain.Nutrition;
 import com.tastetheory.shared.domain.Percentage;
 import com.tastetheory.shared.domain.Quantity;
 import com.tastetheory.shared.domain.UnitPrice;
+import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -38,6 +41,8 @@ import java.util.Optional;
  */
 public class Item {
 
+	private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+
 	private final ItemId id;
 	private String name;
 	private String category;
@@ -46,6 +51,8 @@ public class Item {
 	private YieldPercentage yieldPercentage;
 	private UnitPrice latestPurchasePrice;
 	private Percentage vatRate;
+	private Nutrition nutritionPer100RecipeUnits;
+	private AllergenProfile allergens;
 
 	private Item(
 			ItemId id,
@@ -55,7 +62,9 @@ public class Item {
 			AgreedPrice agreedPrice,
 			YieldPercentage yieldPercentage,
 			UnitPrice latestPurchasePrice,
-			Percentage vatRate) {
+			Percentage vatRate,
+			Nutrition nutritionPer100RecipeUnits,
+			AllergenProfile allergens) {
 		this.id = Objects.requireNonNull(id, "id must not be null");
 		this.units = Objects.requireNonNull(units, "units must not be null");
 		this.yieldPercentage = Objects.requireNonNull(yieldPercentage, "yieldPercentage must not be null");
@@ -64,16 +73,22 @@ public class Item {
 		this.agreedPrice = requirePriceInPurchaseUnit(agreedPrice, units);
 		this.latestPurchasePrice = latestPurchasePrice;
 		this.vatRate = vatRate;
+		this.nutritionPer100RecipeUnits =
+				nutritionPer100RecipeUnits == null ? Nutrition.zero() : nutritionPer100RecipeUnits;
+		this.allergens = allergens == null ? AllergenProfile.none() : allergens;
 	}
 
 	/** A new item, with an identity of its own. */
 	public static Item create(String name, ItemUnits units, AgreedPrice agreedPrice, YieldPercentage yieldPercentage) {
-		return new Item(ItemId.newId(), name, null, units, agreedPrice, yieldPercentage, null, null);
+		return new Item(ItemId.newId(), name, null, units, agreedPrice, yieldPercentage, null, null, null, null);
 	}
 
 	/**
 	 * Rebuilds an item that already exists, for use when loading one back out of
 	 * storage. Everything else goes through {@link #create}.
+	 *
+	 * <p>The parameter list is already uncomfortable and persistence will make it
+	 * worse; a builder is the obvious next move when the JPA mapper lands.
 	 */
 	public static Item restore(
 			ItemId id,
@@ -83,8 +98,11 @@ public class Item {
 			AgreedPrice agreedPrice,
 			YieldPercentage yieldPercentage,
 			UnitPrice latestPurchasePrice,
-			Percentage vatRate) {
-		return new Item(id, name, category, units, agreedPrice, yieldPercentage, latestPurchasePrice, vatRate);
+			Percentage vatRate,
+			Nutrition nutritionPer100RecipeUnits,
+			AllergenProfile allergens) {
+		return new Item(id, name, category, units, agreedPrice, yieldPercentage, latestPurchasePrice, vatRate,
+				nutritionPer100RecipeUnits, allergens);
 	}
 
 	// --------------------------------------------------------------- costing ---
@@ -119,6 +137,21 @@ public class Item {
 	/** True when the last invoice charged more than the agreed price. */
 	public boolean isOverAgreedPrice() {
 		return priceVariancePerPurchaseUnit().filter(Money::isPositive).isPresent();
+	}
+
+	// ------------------------------------------------------------- nutrition ---
+
+	/**
+	 * The nutrition in a given amount of this ingredient.
+	 *
+	 * <p>Yield is not applied. The declared figures already describe the edible
+	 * portion, so raising them for trim loss would count the waste twice — which
+	 * is precisely the opposite of what happens to cost.
+	 */
+	public Nutrition nutritionFor(Quantity recipeQuantity) {
+		Objects.requireNonNull(recipeQuantity, "recipeQuantity must not be null");
+		Quantity inRecipeUnits = recipeQuantity.convertedTo(units.recipeUnit());
+		return nutritionPer100RecipeUnits.scaledBy(inRecipeUnits.amount().divide(ONE_HUNDRED));
 	}
 
 	// -------------------------------------------------------------- behaviour ---
@@ -161,6 +194,16 @@ public class Item {
 		this.vatRate = rate;
 	}
 
+	/** The supplier's figures, per 100 recipe units. */
+	public void recordNutritionPer100(Nutrition nutrition) {
+		this.nutritionPer100RecipeUnits = Objects.requireNonNull(nutrition, "nutrition must not be null");
+	}
+
+	/** What this contains, and what it might contain. */
+	public void declareAllergens(AllergenProfile profile) {
+		this.allergens = Objects.requireNonNull(profile, "profile must not be null");
+	}
+
 	// --------------------------------------------------------------- accessors ---
 
 	public ItemId id() {
@@ -193,6 +236,14 @@ public class Item {
 
 	public Optional<Percentage> vatRate() {
 		return Optional.ofNullable(vatRate);
+	}
+
+	public Nutrition nutritionPer100RecipeUnits() {
+		return nutritionPer100RecipeUnits;
+	}
+
+	public AllergenProfile allergens() {
+		return allergens;
 	}
 
 	// ------------------------------------------------------------------ guards ---
